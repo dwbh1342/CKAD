@@ -1,0 +1,163 @@
+Declarative configuration
+
+K8S competitors:
+- DC/OS: supports many different types of workloads besides containers
+- Amazon ECS: creates pools of compute resources with API calls to orchestrate
+- Docker Swarm Mode: works natively from the docker command, full support for K8S
+
+Single-node K8S clusters:
+- Docker Desktop
+- minikube
+- kubeadm
+
+KinD: Kubernetes in Docker - Single-node clusters are also useful within continuous integration pipelines. In this use case, you want to create ephemeral clusters that start quickly and are in a pristine state for testing applications in Kubernetes each time you check a new code. 
+
+To decide what solution works best for you, you need to ask several key questions including:
+-  "How much control do you want over the cluster versus the amount of effort you are willing to invest in maintaining it?" Examples of fully-managed Kubernetes as a service solutions include Amazon Elastic Kubernetes Service or EKS, Azure Kubernetes Service or AKS, and Google Kubernetes Engine or GKE. To have full control over your cluster, you should check out kubespray, kops, and kubeadm.
+- "Do you already have investment into and expertise with a particular cloud provider?"  There will be a lot less friction to staying close to what you already know.
+- "Do you need enterprise support?" Several vendors offer enterprise support and additional features on top of Kubernetes. These can include OpenShift by RedHat, Pivotal Container Service, or Rancher.
+
+Cluster - the entire running system. All of the machines collectively
+Node - the machines in the cluster (VM or physical). May be worker nodes or master nodes.
+Worker node - includes software to run containers managed by Kubernetes control plane
+Master nodes - run the control plane
+Control plane - a set of APIs and software that Kubernetes users interact with. (master components) Schedules containers onto nodes
+Pods - groups of containers. All containers in a Pod run on the same node. Pods are the smallest building block in Kubernetes.
+Services - define networking rules for exposing Pods to other Pods or exposing Pods to the internet.
+Deployments - manages deployment configuration changes to running pods, and manage horizontal scaling.
+
+Interacting with K8S:
+- directly communicating via rest API calls
+- Client libraries. They can manage auth and individual REST API requests/responses. K8S and communities maintain these.
+- kubectl - issue high-levelcommands that are translated into REST API calls
+- Web dashboard - easy to navigate views of cluster resources.
+
+kubectl commands:
+- create = creates resources (pods, servcies, etc.)
+- delete = delete resource
+- get = gets a list of resources for a specified type
+- describe = print detailed info about a resource or list of resources
+- logs = print container logs for a particular pod 
+
+Pods:
+Basic building block of K8S
+One or more containers in a pod
+Pod containers all share a container network
+Each pod gets 1 IP address
+
+Container image
+Container ports
+Container restart policy
+Resource limits
+
+Pod properties are all written in manifest files (.yaml files, also for other types of resources)
+kubectl create sends manifests to the Kubernetes API Server
+Manifests are sent to node to create and config resources
+
+cat [file name]  = reads a manifest file
+kubectl create -f 1.1-basic_pod.yaml = -f means create from a file
+
+Labels are key value pairs that identify resource attributes. For example, the application tier, whether it's front end or back end or maybe a region such as US East or US West. 
+
+
+
+Request sets the minimum required resources to schedule the pod onto a node and the limit is the maximum amount of resources you want the node to ever give the pod.
+
+Services:
+A service defines networking rules for accessing Pods in the cluster and from the internet you can declare a service to access a group of Pods using labels. And in our example, we can use our app label just like the webserver Pod for the services target. Clients could then access the service at a fixed address. And the services networking rules will direct client request to a Pod in the selected group of Pods.
+
+Cluster-IP: private IP for each service
+External-IP: public IP for each service
+
+Srvices allow us to expose Pods using a static address, even though the addresses of the underlying Pods may be changing. We also specifically used a NodePort service to gain access to the service from outside of the cluster on a static Port that is reserved on each node in the cluster. This allowed us to access the service by sending a request to any of the nodes, just not the node that is running the Pod.
+
+Multi-container pods
+Namespaces - separate resources according to users, environments, or applications
+Can also use RBAC to secure access per namespace
+
+To create a namespace, create a namespace yaml file, then kubectl create -f [namespace.yaml] (manifest method)
+You can specify the namespace name in the manifest, but then the manifest isn't as portable since it can't be overwritten
+All containers in a pod share the same network stack and IP address, so "localhost" can be used in the url to reference other containers within it
+Pod Logs
+kubectl logs -n [pod name] -tail n = gets last n number of logs
+
+Service Discovery
+Support multi-pod design
+Provides static endpoints for each tier
+Handles Pod IP changes
+Load balancing
+
+There are two Service discovery mechanisms built into Kubernetes. The first are environment variables, and the second is DNS. Kubernetes will automatically inject environment variables into containers that provide the address to access services. The environment variables follow a naming convention so that all you need to know is the name of the service to access it. Kubernetes also constructs DNS records based on the service name and containers are automatically configured to clear the clusters, DNS, to discover those services.
+
+There are separate environment variables made available to you. The service cluster IP address is available using the environment variable, following the pattern of a service name in all capital letters, with hyphens replaced by underscores followed by underscore service, underscore host in all caps. By knowing the service name you construct the environment variable name, to discover that service IP address. 
+
+Deployments
+Deployment - template that represents multiple replicas of a pod. A replica is a copy of a pod, and k8s scales by creating more/less replicas
+Describe a desired state that K8S needs to achieve
+Deployment Controller master component converges actual state to the desired state
+"kubectl scale" to scale number of replicas
+
+Autoscaling
+Scale automatically based on desired target CPU percentage (or custom metrics) along with min or max replicas
+Metrics = Metrics server is one solution for collecting metrics
+Pods must have CPU "requests"
+horizontalpodautoscaler (hpa) is configured with target CPU, min, and max resources
+kubectl update to update resources
+kubectl apply to apply those updates
+
+Rolling Updates and Rollbacks
+Rollouts update deployments
+Any change to a deployment's template triggers a rollout
+Rolling update is the default K8S strategy
+Updates in groups rather than all at once (rolling)
+Scaling is not a rollout
+Rollouts can be paused, resumed, and undone
+"kubectl rollout undo" can undo rollout changes
+
+Probes:
+Probes (health checks): 
+- Readiness checks for when pods are ready to serve traffic
+	- Useful to check external dependencies
+	- Set the pod's status to ready condition for services
+- Liveness probe: 
+	- Detect when a pod enters a broken state
+	- K8S decides when to restart the pod for you
+	- Declared in the same way as readiness probe
+- All container probes must pass for the pod to pass
+- Probe actions: a command that runs in the container, an HTTP GET request, or opening a TCP socket
+- Default is probe checking the containers every 10 secs
+
+Init Containers:
+- Check prereqs before starting containers (wait for services, downloads, dynamic content, etc)
+- Run in sequence in order they are declared and to completion
+- Run every time a pod is created
+- Init containers do not support readiness probes because they must run to completion before the state of the pod can be considered ready. You will receive an error if you try to include a readiness probe in an init container.
+
+Volumes:
+- Used to share files between containers, deploy a consistent data tier
+- Two data storage types: Volumes, and Persistent Volumes (independent of lifecycle of pods)
+- Volumes tolerate container restarts
+- Default volume type is "emptyDir"
+- Persistent Volumes can be mounted by different nodes and pods if the underlying storage supports it
+- Persistent Volume Claims: describes a pod's request for persistent volume storage.
+	- How much storage, what type of storage, and access mode
+	- 
+	- Use persistent volumes for more durable data types
+
+
+ConfigMaps and Secrets
+- Separate configuration from pod "specs"
+- Makes it easier to manage configurations and makes manifests more portable
+- Secrets are specifically for sensitive data
+- Specialized types for storing credentials for Docker and TLS certs
+- Stores values as key value pairs
+
+Kubernetes Ecosystem
+- Vibrant ecosystem around the core of Kubernetes
+- Helm: Kubernetes package manager
+- Kustomize: allows you to customize the yaml manifests in Kubernetes. Works by using a kustomize.yaml
+	- Examples: generating configmaps and secrets from files
+	- Configure common fields across multiple resources
+- Prometheus: open source monitoring and alerting system
+- Knative: platofrm for building serverless workloads on K8S
+
