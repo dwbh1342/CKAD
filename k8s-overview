@@ -10,12 +10,16 @@ Single-node K8S clusters:
 - minikube
 - kubeadm
 
-KinD: Kubernetes in Docker - Single-node clusters are also useful within continuous integration pipelines. In this use case, you want to create ephemeral clusters that start quickly and are in a pristine state for testing applications in Kubernetes each time you check a new code. 
+KinD: Kubernetes in Docker - Single-node clusters are also useful within continuous integration pipelines. In this use case, you want to create ephemeral clusters that
+start quickly and are in a pristine state for testing applications in Kubernetes each time you check a new code. 
 
 To decide what solution works best for you, you need to ask several key questions including:
--  "How much control do you want over the cluster versus the amount of effort you are willing to invest in maintaining it?" Examples of fully-managed Kubernetes as a service solutions include Amazon Elastic Kubernetes Service or EKS, Azure Kubernetes Service or AKS, and Google Kubernetes Engine or GKE. To have full control over your cluster, you should check out kubespray, kops, and kubeadm.
+-  "How much control do you want over the cluster versus the amount of effort you are willing to invest in maintaining it?" Examples of fully-managed Kubernetes as a 
+service solutions include Amazon Elastic Kubernetes Service or EKS, Azure Kubernetes Service or AKS, and Google Kubernetes Engine or GKE. To have full control over 
+your cluster, you should check out kubespray, kops, and kubeadm.
 - "Do you already have investment into and expertise with a particular cloud provider?"  There will be a lot less friction to staying close to what you already know.
-- "Do you need enterprise support?" Several vendors offer enterprise support and additional features on top of Kubernetes. These can include OpenShift by RedHat, Pivotal Container Service, or Rancher.
+- "Do you need enterprise support?" Several vendors offer enterprise support and additional features on top of Kubernetes. These can include OpenShift by RedHat, 
+Pivotal Container Service, or Rancher.
 
 Cluster - the entire running system. All of the machines collectively
 Node - the machines in the cluster (VM or physical). May be worker nodes or master nodes.
@@ -57,19 +61,24 @@ Manifests are sent to node to create and config resources
 cat [file name]  = reads a manifest file
 kubectl create -f 1.1-basic_pod.yaml = -f means create from a file
 
-Labels are key value pairs that identify resource attributes. For example, the application tier, whether it's front end or back end or maybe a region such as US East or US West. 
+Labels are key value pairs that identify resource attributes. For example, the application tier, whether it's front end or back end or maybe a region such as US East 
+or US West. 
 
 
 
 Request sets the minimum required resources to schedule the pod onto a node and the limit is the maximum amount of resources you want the node to ever give the pod.
 
 Services:
-A service defines networking rules for accessing Pods in the cluster and from the internet you can declare a service to access a group of Pods using labels. And in our example, we can use our app label just like the webserver Pod for the services target. Clients could then access the service at a fixed address. And the services networking rules will direct client request to a Pod in the selected group of Pods.
+A service defines networking rules for accessing Pods in the cluster and from the internet you can declare a service to access a group of Pods using labels. And in our
+example, we can use our app label just like the webserver Pod for the services target. Clients could then access the service at a fixed address. And the services 
+networking rules will direct client request to a Pod in the selected group of Pods.
 
 Cluster-IP: private IP for each service
 External-IP: public IP for each service
 
-Srvices allow us to expose Pods using a static address, even though the addresses of the underlying Pods may be changing. We also specifically used a NodePort service to gain access to the service from outside of the cluster on a static Port that is reserved on each node in the cluster. This allowed us to access the service by sending a request to any of the nodes, just not the node that is running the Pod.
+Srvices allow us to expose Pods using a static address, even though the addresses of the underlying Pods may be changing. We also specifically used a NodePort service
+to gain access to the service from outside of the cluster on a static Port that is reserved on each node in the cluster. This allowed us to access the service by 
+sending a request to any of the nodes, just not the node that is running the Pod.
 
 Multi-container pods
 Namespaces - separate resources according to users, environments, or applications
@@ -87,9 +96,12 @@ Provides static endpoints for each tier
 Handles Pod IP changes
 Load balancing
 
-There are two Service discovery mechanisms built into Kubernetes. The first are environment variables, and the second is DNS. Kubernetes will automatically inject environment variables into containers that provide the address to access services. The environment variables follow a naming convention so that all you need to know is the name of the service to access it. Kubernetes also constructs DNS records based on the service name and containers are automatically configured to clear the clusters, DNS, to discover those services.
+There are two Service discovery mechanisms built into Kubernetes. The first are environment variables, and the second is DNS. Kubernetes will automatically inject 
+environment variables into containers that provide the address to access services. The environment variables follow a naming convention so that all you need to know is the name of the service to access it. Kubernetes also constructs DNS records based on the service name and containers are automatically configured to clear the clusters, DNS, to discover those services.
 
-There are separate environment variables made available to you. The service cluster IP address is available using the environment variable, following the pattern of a service name in all capital letters, with hyphens replaced by underscores followed by underscore service, underscore host in all caps. By knowing the service name you construct the environment variable name, to discover that service IP address. 
+There are separate environment variables made available to you. The service cluster IP address is available using the environment variable, following the pattern of a 
+service name in all capital letters, with hyphens replaced by underscores followed by underscore service, underscore host in all caps. By knowing the service name you 
+construct the environment variable name, to discover that service IP address. 
 
 Deployments
 Deployment - template that represents multiple replicas of a pod. A replica is a copy of a pod, and k8s scales by creating more/less replicas
@@ -131,7 +143,8 @@ Init Containers:
 - Check prereqs before starting containers (wait for services, downloads, dynamic content, etc)
 - Run in sequence in order they are declared and to completion
 - Run every time a pod is created
-- Init containers do not support readiness probes because they must run to completion before the state of the pod can be considered ready. You will receive an error if you try to include a readiness probe in an init container.
+- Init containers do not support readiness probes because they must run to completion before the state of the pod can be considered ready. You will receive an error
+if you try to include a readiness probe in an init container.
 
 Volumes:
 - Used to share files between containers, deploy a consistent data tier
